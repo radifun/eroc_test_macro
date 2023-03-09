@@ -15,3 +15,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // =================================================================================================
+
+use proc_macro::TokenStream;
+
+#[proc_macro_attribute]
+pub fn test_case(_attributes: TokenStream, content: TokenStream) -> TokenStream {
+    let item = syn::parse_macro_input!(content);
+
+    if let syn::Item::Fn(function) = item {
+        let syn::ItemFn {
+            attrs,
+            block,
+            vis,
+            sig: syn::Signature { ident, unsafety, constness, inputs, .. },
+            ..
+        } = function;
+
+        let init_items = quote::quote!();
+
+        let code = quote::quote!(
+            #[test]
+            #(#attrs)*
+            #vis #unsafety #constness fn #ident() {
+                fn run_test(#inputs) #block
+
+                #init_items
+                run_test();
+            }
+        );
+
+        return code.into();
+    } else {
+        panic!("Cannot use test_case attribute.");
+    }
+}
