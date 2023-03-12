@@ -31,16 +31,19 @@ pub fn test_case(_attributes: TokenStream, content: TokenStream) -> TokenStream 
             ..
         } = function;
 
-        let init_items = quote::quote!();
-
         let code = quote::quote!(
             #[test]
             #(#attrs)*
             #vis #unsafety #constness fn #ident() {
                 fn run_test(#inputs) #block
 
-                #init_items
-                run_test();
+                let mut test_case = eroc_test::TestCase::new(
+                    concat!(module_path!(), "::", stringify!(#ident)));
+
+                for _ in 0..1000 {
+                    let mut test = test_case.create_test();
+                    run_test(&mut test);
+                }
             }
         );
 
